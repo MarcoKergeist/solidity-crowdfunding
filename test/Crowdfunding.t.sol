@@ -8,14 +8,8 @@ contract CrowdfundingTest is BaseTest {
         vm.prank(creator);
         crowdfunding.createCampaign("Test Project", GOAL, DURATION);
 
-        (
-            string memory name,
-            address owner,
-            uint256 goal,
-            uint256 pledged,
-            uint256 deadline,
-            bool claimed
-        ) = crowdfunding.campaigns(0);
+        (string memory name, address owner, uint256 goal, uint256 pledged, uint256 deadline, bool claimed) =
+            crowdfunding.campaigns(0);
 
         assertEq(name, "Test Project");
         assertEq(owner, creator);
@@ -32,7 +26,7 @@ contract CrowdfundingTest is BaseTest {
         vm.prank(backer1);
         crowdfunding.pledge{value: 5 ether}(0);
 
-        (, , , uint256 pledged, , ) = crowdfunding.campaigns(0);
+        (,,, uint256 pledged,,) = crowdfunding.campaigns(0);
 
         assertEq(pledged, 5 ether);
         assertEq(crowdfunding.pledges(0, backer1), 5 ether);

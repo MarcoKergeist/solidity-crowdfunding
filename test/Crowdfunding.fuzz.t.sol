@@ -13,8 +13,8 @@ contract CrowdfundingFuzzTest is BaseTest {
         vm.prank(backer1);
         crowdfunding.pledge{value: amount}(0);
 
-        (, , , uint256 pledged, , ) = crowdfunding.campaigns(0);
-        
+        (,,, uint256 pledged,,) = crowdfunding.campaigns(0);
+
         assertEq(pledged, amount);
         assertEq(crowdfunding.pledges(0, backer1), amount);
     }
@@ -36,7 +36,7 @@ contract CrowdfundingFuzzTest is BaseTest {
         vm.prank(creator);
         crowdfunding.createCampaign("Proyecto Flexible", goal, duration);
 
-        (, , uint256 savedGoal, , uint256 deadline, ) = crowdfunding.campaigns(0);
+        (,, uint256 savedGoal,, uint256 deadline,) = crowdfunding.campaigns(0);
 
         assertEq(savedGoal, goal);
         assertEq(deadline, block.timestamp + duration);

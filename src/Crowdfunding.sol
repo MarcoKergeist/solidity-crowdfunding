@@ -4,7 +4,6 @@ pragma solidity ^0.8.35;
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Crowdfunding is Ownable {
-
     uint256 private _campaignCount = 0;
 
     uint8 public constant MAX_FEE = 5;
@@ -17,7 +16,7 @@ contract Crowdfunding is Ownable {
         uint256 deadline;
         bool claimed;
     }
-    
+
     constructor() Ownable(msg.sender) {
         //
     }
@@ -42,27 +41,11 @@ contract Crowdfunding is Ownable {
 
     // Events
     event CampaignCreated(
-        uint256 indexed campaignId,
-        address indexed owner,
-        string name,
-        uint256 goal,
-        uint256 deadline
+        uint256 indexed campaignId, address indexed owner, string name, uint256 goal, uint256 deadline
     );
-    event CampaignPledged(
-        uint256 indexed campaignId,
-        address indexed backer,
-        uint256 amount
-    );
-    event FundsClaimed(
-        uint256 indexed campaignId,
-        address indexed owner,
-        uint256 amount
-    );
-    event FundsRecovered(
-        uint256 indexed campaignId,
-        address indexed backer,
-        uint256 amount
-    );
+    event CampaignPledged(uint256 indexed campaignId, address indexed backer, uint256 amount);
+    event FundsClaimed(uint256 indexed campaignId, address indexed owner, uint256 amount);
+    event FundsRecovered(uint256 indexed campaignId, address indexed backer, uint256 amount);
 
     function setFeePercentage(uint8 _feePercentage) external onlyOwner {
         if (_feePercentage > MAX_FEE) {
@@ -76,18 +59,14 @@ contract Crowdfunding is Ownable {
         uint256 amount = accumulatedFees;
         accumulatedFees = 0;
 
-        (bool success, ) = payable(owner()).call{value: amount}("");
+        (bool success,) = payable(owner()).call{value: amount}("");
 
-        if (! success) {
+        if (!success) {
             revert TransferFailed();
         }
     }
 
-    function createCampaign(
-        string memory _name,
-        uint256 _goal,
-        uint256 _duration
-    ) external {
+    function createCampaign(string memory _name, uint256 _goal, uint256 _duration) external {
         uint256 campaignId = _campaignCount++;
 
         campaigns[campaignId] = Campaign({
@@ -99,13 +78,7 @@ contract Crowdfunding is Ownable {
             claimed: false
         });
 
-        emit CampaignCreated(
-            campaignId,
-            msg.sender,
-            _name,
-            _goal,
-            block.timestamp + _duration
-        );
+        emit CampaignCreated(campaignId, msg.sender, _name, _goal, block.timestamp + _duration);
     }
 
     function pledge(uint256 _campaignId) external payable {
@@ -124,11 +97,7 @@ contract Crowdfunding is Ownable {
         campaigns[_campaignId].pledged += msg.value;
         pledges[_campaignId][msg.sender] += msg.value;
 
-        emit CampaignPledged(
-            _campaignId,
-            msg.sender,
-            msg.value
-        );
+        emit CampaignPledged(_campaignId, msg.sender, msg.value);
     }
 
     function claim(uint256 _campaignId) external {
@@ -153,18 +122,13 @@ contract Crowdfunding is Ownable {
         uint256 fee = (campaigns[_campaignId].pledged * feePercentage) / 100;
         accumulatedFees += fee;
 
-        (bool success, ) = payable(campaigns[_campaignId].owner)
-            .call{value: campaigns[_campaignId].pledged - fee}("");
+        (bool success,) = payable(campaigns[_campaignId].owner).call{value: campaigns[_campaignId].pledged - fee}("");
 
-        if (! success) {
+        if (!success) {
             revert TransferFailed();
         }
 
-        emit FundsClaimed(
-            _campaignId,
-            campaigns[_campaignId].owner,
-            campaigns[_campaignId].pledged - fee
-        );
+        emit FundsClaimed(_campaignId, campaigns[_campaignId].owner, campaigns[_campaignId].pledged - fee);
     }
 
     function recoverFunds(uint256 _campaignId) external {
@@ -182,7 +146,7 @@ contract Crowdfunding is Ownable {
 
         if (
             campaigns[_campaignId].pledged >= campaigns[_campaignId].goal
-            && block.timestamp <= campaigns[_campaignId].deadline + 30 days
+                && block.timestamp <= campaigns[_campaignId].deadline + 30 days
         ) {
             revert CampaignSuccessful(_campaignId);
         }
@@ -196,16 +160,12 @@ contract Crowdfunding is Ownable {
         pledges[_campaignId][msg.sender] = 0;
         campaigns[_campaignId].pledged -= amount;
 
-        (bool success, ) = payable(msg.sender).call{value: amount}("");
+        (bool success,) = payable(msg.sender).call{value: amount}("");
 
-        if (! success) {
+        if (!success) {
             revert TransferFailed();
         }
 
-        emit FundsRecovered(
-            _campaignId,
-            msg.sender,
-            amount
-        );
+        emit FundsRecovered(_campaignId, msg.sender, amount);
     }
 }

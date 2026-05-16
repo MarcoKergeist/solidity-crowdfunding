@@ -13,7 +13,7 @@ abstract contract BaseTest is Test {
 
     uint256 internal constant GOAL = 10 ether;
     uint256 internal constant DURATION = 7 days;
-    
+
     function setUp() public virtual {
         crowdfunding = new Crowdfunding();
 
@@ -21,7 +21,7 @@ abstract contract BaseTest is Test {
         vm.label(backer1, "Backer 1");
         vm.label(backer2, "Backer 2");
         vm.label(address(crowdfunding), "Crowdfunding Contract");
-        
+
         vm.deal(backer1, 20 ether);
         vm.deal(backer2, 20 ether);
     }
