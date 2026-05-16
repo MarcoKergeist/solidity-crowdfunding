@@ -7,6 +7,8 @@ contract Crowdfunding is Ownable {
 
     uint256 private _campaignCount = 0;
 
+    uint8 public constant MAX_FEE = 5;
+
     struct Campaign {
         string name;
         address owner;
@@ -63,7 +65,7 @@ contract Crowdfunding is Ownable {
     );
 
     function setFeePercentage(uint8 _feePercentage) external onlyOwner {
-        if (_feePercentage > 5) {
+        if (_feePercentage > MAX_FEE) {
             revert FeeOutOfBounds(_feePercentage);
         }
 
