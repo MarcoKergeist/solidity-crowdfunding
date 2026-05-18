@@ -11,10 +11,8 @@ abstract contract BaseTest is Test {
     address internal backer1 = address(0x2);
     address internal backer2 = address(0x3);
 
-    uint256 internal constant GOAL = 10 ether;
-    uint256 internal constant DURATION = 7 days;
-
     error GoalTooLow(uint256 goal);
+    error DurationOutOfBounds(uint256 duration);
     error MustBeCampaignOwner(uint256 campaignId, address caller);
     error CampaignNotFound(uint256 campaignId);
     error InvalidPagination(uint256 page, uint256 perPage);
@@ -35,7 +33,7 @@ abstract contract BaseTest is Test {
 
     function _helperCreateCampaigns(uint256 count) internal {
         for (uint256 i = 0; i < count; i++) {
-            crowdfunding.createCampaign("Test Campaign", 1 ether, block.timestamp + 1 days);
+            crowdfunding.createCampaign("Test Campaign", 1 ether, 7 days);
         }
     }
 }

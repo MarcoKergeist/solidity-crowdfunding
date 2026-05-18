@@ -1,7 +1,9 @@
 include .env
 export
 
-.PHONY: test deploy-sepolia
+.PHONY: all test deploy-sepolia
+
+all: test deploy-sepolia
 
 test:
 	@forge fmt

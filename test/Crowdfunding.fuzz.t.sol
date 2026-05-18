@@ -8,7 +8,7 @@ contract CrowdfundingFuzzTest is BaseTest {
         uint256 amount = bound(randomAmount, 0.01 ether, 20 ether);
 
         vm.prank(creator);
-        crowdfunding.createCampaign("New Campaign", GOAL, DURATION);
+        crowdfunding.createCampaign("New Campaign", 1 ether, 1 days);
 
         vm.prank(backer1);
         crowdfunding.pledge{value: amount}(0);
@@ -29,9 +29,9 @@ contract CrowdfundingFuzzTest is BaseTest {
         }
     }
 
-    function testFuzz_CreateCampaign(uint256 randomGoal, uint256 randomDuration) public {
-        uint256 duration = bound(randomDuration, 1 hours, 365 days);
-        uint256 goal = bound(randomGoal, 0.01 ether, 1000000 ether);
+    function testFuzz_CreateCampaign(uint256 goal, uint256 duration) public {
+        vm.assume(goal >= 0.01 ether && goal <= 1000000 ether);
+        vm.assume(duration >= 4 hours && duration <= 365 days);
 
         vm.prank(creator);
         crowdfunding.createCampaign("New Campaign", goal, duration);
@@ -40,6 +40,21 @@ contract CrowdfundingFuzzTest is BaseTest {
 
         assertEq(savedGoal, goal);
         assertEq(deadline, block.timestamp + duration);
+    }
+
+    function testFuzz_CampaignDurationLimits(uint256 duration) public {
+        vm.assume(duration > 0);
+        vm.prank(creator);
+
+        if (duration < 4 hours) {
+            vm.expectRevert(abi.encodeWithSelector(DurationOutOfBounds.selector, duration));
+            crowdfunding.createCampaign("Short Project", 1 ether, duration);
+        } else if (duration > 365 days) {
+            vm.expectRevert(abi.encodeWithSelector(DurationOutOfBounds.selector, duration));
+            crowdfunding.createCampaign("Long Project", 1 ether, duration);
+        } else {
+            crowdfunding.createCampaign("Valid Project", 1 ether, duration);
+        }
     }
 
     function testFuzz_GetPaginatedCampaigns(uint8 totalCampaigns, uint8 page, uint8 perPage) public {

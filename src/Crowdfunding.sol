@@ -32,6 +32,7 @@ contract Crowdfunding is Ownable {
     // Errors
     error FeeOutOfBounds(uint8 fee);
     error GoalTooLow(uint256 goal);
+    error DurationOutOfBounds(uint256 duration);
     error MustBeCampaignOwner(uint256 campaignId, address caller);
     error CampaignNotFound(uint256 campaignId);
     error CampaignEnded(uint256 campaignId);
@@ -103,6 +104,10 @@ contract Crowdfunding is Ownable {
     function createCampaign(string memory _name, uint256 _goal, uint256 _duration) external returns (uint256) {
         if (_goal < minimumCampaignGoal) {
             revert GoalTooLow(_goal);
+        }
+
+        if (_duration < 4 hours || _duration > 365 days) {
+            revert DurationOutOfBounds(_duration);
         }
 
         uint256 campaignId = _campaignCount++;

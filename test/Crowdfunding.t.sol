@@ -6,7 +6,7 @@ import "./shared/BaseTest.t.sol";
 contract CrowdfundingTest is BaseTest {
     function test_Create_Campaign() public {
         vm.prank(creator);
-        uint256 campaignId = crowdfunding.createCampaign("Test Project", GOAL, DURATION);
+        uint256 campaignId = crowdfunding.createCampaign("Test Project", 1 ether, 1 days);
 
         (uint256 id, string memory name, address owner, uint256 goal, uint256 pledged, uint256 deadline, bool claimed) =
             crowdfunding.campaigns(0);
@@ -14,9 +14,9 @@ contract CrowdfundingTest is BaseTest {
         assertEq(id, campaignId);
         assertEq(name, "Test Project");
         assertEq(owner, creator);
-        assertEq(goal, GOAL);
+        assertEq(goal, 1 ether);
         assertEq(pledged, 0);
-        assertEq(deadline, block.timestamp + DURATION);
+        assertEq(deadline, block.timestamp + 1 days);
         assertFalse(claimed);
     }
 
@@ -26,7 +26,25 @@ contract CrowdfundingTest is BaseTest {
         vm.expectRevert(abi.encodeWithSelector(GoalTooLow.selector, invalidGoal));
 
         vm.prank(creator);
-        crowdfunding.createCampaign("Spam Campaign", invalidGoal, block.timestamp + 1 days);
+        crowdfunding.createCampaign("Spam Campaign", invalidGoal, 1 days);
+    }
+
+    function test_RevertIf_DurationIsTooShort() public {
+        uint256 invalidShortDuration = 1 seconds;
+
+        vm.expectRevert(abi.encodeWithSelector(DurationOutOfBounds.selector, invalidShortDuration));
+
+        vm.prank(creator);
+        crowdfunding.createCampaign("Flash Project", 1 ether, invalidShortDuration);
+    }
+
+    function test_RevertIf_DurationIsTooLong() public {
+        uint256 invalidLongDuration = 36500 days;
+
+        vm.expectRevert(abi.encodeWithSelector(DurationOutOfBounds.selector, invalidLongDuration));
+
+        vm.prank(creator);
+        crowdfunding.createCampaign("Proyecto Eterno", 1 ether, invalidLongDuration);
     }
 
     function test_RenameCampaign_Success() public {
@@ -62,7 +80,7 @@ contract CrowdfundingTest is BaseTest {
 
     function test_Pledge_Success() public {
         vm.prank(creator);
-        crowdfunding.createCampaign("Test Project", GOAL, DURATION);
+        crowdfunding.createCampaign("Test Project", 1 ether, 1 days);
 
         vm.prank(backer1);
         crowdfunding.pledge{value: 5 ether}(0);
@@ -75,9 +93,9 @@ contract CrowdfundingTest is BaseTest {
 
     function test_RevertIf_PledgeAfterDeadline() public {
         vm.prank(creator);
-        crowdfunding.createCampaign("Test Project", GOAL, DURATION);
+        crowdfunding.createCampaign("Test Project", 1 ether, 1 days);
 
-        vm.warp(block.timestamp + DURATION + 1 days);
+        vm.warp(block.timestamp + 7 days);
 
         vm.prank(backer1);
         vm.expectRevert(abi.encodeWithSelector(Crowdfunding.CampaignEnded.selector, 0));
@@ -86,12 +104,12 @@ contract CrowdfundingTest is BaseTest {
 
     function test_Claim_Success() public {
         vm.prank(creator);
-        crowdfunding.createCampaign("Test Project", GOAL, DURATION);
+        crowdfunding.createCampaign("Test Project", 1 ether, 1 days);
 
         vm.prank(backer1);
         crowdfunding.pledge{value: 12 ether}(0);
 
-        vm.warp(block.timestamp + DURATION + 1 seconds);
+        vm.warp(block.timestamp + 1 days + 1 seconds);
 
         uint256 balanceCreatorBefore = creator.balance;
 
@@ -117,7 +135,7 @@ contract CrowdfundingTest is BaseTest {
 
     function test_RevertIf_ClaimBeforeDeadline() public {
         vm.prank(creator);
-        crowdfunding.createCampaign("Test Project", GOAL, DURATION);
+        crowdfunding.createCampaign("Test Project", 1 ether, 1 days);
 
         vm.prank(backer1);
         crowdfunding.pledge{value: 12 ether}(0);
@@ -129,12 +147,12 @@ contract CrowdfundingTest is BaseTest {
 
     function test_RevertIf_RecoverFundsFromSuccessfulCampaignDuringGracePeriod() public {
         vm.prank(creator);
-        crowdfunding.createCampaign("Test Project", GOAL, DURATION);
+        crowdfunding.createCampaign("Test Project", 1 ether, 1 days);
 
         vm.prank(backer1);
         crowdfunding.pledge{value: 10 ether}(0);
 
-        vm.warp(block.timestamp + DURATION + 15 days);
+        vm.warp(block.timestamp + 7 days);
 
         vm.prank(backer1);
         vm.expectRevert(abi.encodeWithSelector(Crowdfunding.CampaignSuccessful.selector, 0));
@@ -143,19 +161,19 @@ contract CrowdfundingTest is BaseTest {
 
     function test_RecoverFunds_SuccessAfterGracePeriod() public {
         vm.prank(creator);
-        crowdfunding.createCampaign("Test Project", GOAL, DURATION);
+        crowdfunding.createCampaign("Test Project", 1 ether, 1 days);
 
         vm.prank(backer1);
-        crowdfunding.pledge{value: 10 ether}(0);
+        crowdfunding.pledge{value: 0.5 ether}(0);
 
-        vm.warp(block.timestamp + DURATION + 31 days);
+        vm.warp(block.timestamp + 7 days);
 
         uint256 balanceBackerBefore = backer1.balance;
 
         vm.prank(backer1);
         crowdfunding.recoverFunds(0);
 
-        assertEq(backer1.balance, balanceBackerBefore + 10 ether);
+        assertEq(backer1.balance, balanceBackerBefore + 0.5 ether);
     }
 
     function test_RevertIf_PageOrPerPageIsZero() public {
