@@ -2,9 +2,14 @@
 cache/
 out/
 
-# Commonly ignored directories
-.logs/
-.ignore/
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
 # Ignores all broadcast logs
 broadcast/
@@ -20,3 +25,11 @@ docs/
 # IDE files
 .vscode/
 .idea/
+
+# Other files
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?

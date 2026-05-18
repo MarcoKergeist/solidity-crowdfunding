@@ -4,12 +4,13 @@ permissions: {}
 
 on:
   push:
+    branches: [ master ]
   pull_request:
   workflow_dispatch:
 
 jobs:
-  check:
-    name: Foundry project
+  contracts:
+    name: Foundry Contracts
     runs-on: ubuntu-latest
     permissions:
       contents: read

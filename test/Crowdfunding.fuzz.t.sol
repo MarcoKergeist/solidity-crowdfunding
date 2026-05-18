@@ -41,4 +41,26 @@ contract CrowdfundingFuzzTest is BaseTest {
         assertEq(savedGoal, goal);
         assertEq(deadline, block.timestamp + duration);
     }
+
+    function testFuzz_GetPaginatedCampaigns(uint8 totalCampaigns, uint8 page, uint8 perPage) public {
+        vm.assume(page > 0);
+        vm.assume(perPage > 0 && perPage <= 50);
+        vm.assume(totalCampaigns <= 1000);
+
+        _helperCreateCampaigns(totalCampaigns);
+
+        Crowdfunding.Campaign[] memory results = crowdfunding.getPaginatedCampaigns(page, perPage);
+
+        uint256 expectedFirstIndex = (uint256(page) - 1) * perPage;
+
+        if (expectedFirstIndex >= totalCampaigns) {
+            assertEq(results.length, 0);
+        } else {
+            uint256 expectedHowMany = expectedFirstIndex + perPage > totalCampaigns
+                ? totalCampaigns - expectedFirstIndex
+                : perPage;
+
+            assertEq(results.length, expectedHowMany);
+        }
+    }
 }

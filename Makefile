@@ -4,7 +4,7 @@ export
 .PHONY: test deploy-sepolia
 
 test:
-	forge test -vv
+	@forge test -vv
 
 deploy-sepolia:
 	forge script script/Crowdfunding.s.sol \

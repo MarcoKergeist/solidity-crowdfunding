@@ -104,4 +104,38 @@ contract CrowdfundingTest is BaseTest {
 
         assertEq(backer1.balance, balanceBackerBefore + 10 ether);
     }
+
+    function test_RevertIfPageOrPerPageIsZero() public {
+        vm.expectRevert(abi.encodeWithSelector(InvalidPagination.selector, 0, 10));
+        crowdfunding.getPaginatedCampaigns(0, 10);
+
+        vm.expectRevert(abi.encodeWithSelector(InvalidPagination.selector, 1, 0));
+        crowdfunding.getPaginatedCampaigns(1, 0);
+    }
+
+    function test_GetPaginatedCampaigns_EmptyContract() public view {
+        Crowdfunding.Campaign[] memory results = crowdfunding.getPaginatedCampaigns(1, 10);
+        assertEq(results.length, 0);
+    }
+
+    function test_GetPaginatedCampaigns_FirstPageFull() public {
+        _helperCreateCampaigns(5);
+
+        Crowdfunding.Campaign[] memory results = crowdfunding.getPaginatedCampaigns(1, 5);
+        assertEq(results.length, 5);
+    }
+
+    function test_GetPaginatedCampaigns_LastPagePartial() public {
+        _helperCreateCampaigns(12);
+
+        Crowdfunding.Campaign[] memory results = crowdfunding.getPaginatedCampaigns(3, 5);
+        assertEq(results.length, 2);
+    }
+
+    function test_GetPaginatedCampaigns_OutOfBounds() public {
+        _helperCreateCampaigns(5);
+
+        Crowdfunding.Campaign[] memory results = crowdfunding.getPaginatedCampaigns(2, 5);
+        assertEq(results.length, 0);
+    }
 }

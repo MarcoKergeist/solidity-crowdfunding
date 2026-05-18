@@ -14,6 +14,8 @@ abstract contract BaseTest is Test {
     uint256 internal constant GOAL = 10 ether;
     uint256 internal constant DURATION = 7 days;
 
+    error InvalidPagination(uint256 page, uint256 perPage);
+
     function setUp() public virtual {
         crowdfunding = new Crowdfunding();
 
@@ -24,5 +26,11 @@ abstract contract BaseTest is Test {
 
         vm.deal(backer1, 20 ether);
         vm.deal(backer2, 20 ether);
+    }
+
+    function _helperCreateCampaigns(uint256 count) internal {
+        for (uint256 i = 0; i < count; i++) {
+            crowdfunding.createCampaign("Test Campaign", 1 ether, block.timestamp + 1 days);
+        }
     }
 }

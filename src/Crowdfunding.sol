@@ -38,6 +38,7 @@ contract Crowdfunding is Ownable {
     error ZeroContribution();
     error NoFundsToRecover();
     error TransferFailed();
+    error InvalidPagination(uint256 page, uint256 perPage);
 
     // Events
     event CampaignCreated(
@@ -64,6 +65,30 @@ contract Crowdfunding is Ownable {
         if (!success) {
             revert TransferFailed();
         }
+    }
+
+    function getPaginatedCampaigns(uint256 _page, uint256 _perPage) external view returns (Campaign[] memory) {
+        if (_page == 0 || _perPage == 0) {
+            revert InvalidPagination(_page, _perPage);
+        }
+
+        uint256 first = (_page - 1) * _perPage;
+
+        if (first >= _campaignCount) {
+            return new Campaign[](0);
+        }
+
+        uint256 howMany = _page * _perPage > _campaignCount ? _campaignCount - first : _perPage;
+
+        Campaign[] memory paginatedCampaigns = new Campaign[](howMany);
+        for (uint256 i = first; i < first + howMany;) {
+            paginatedCampaigns[i - first] = campaigns[i];
+            unchecked {
+                i++;
+            }
+        }
+
+        return paginatedCampaigns;
     }
 
     function createCampaign(string memory _name, uint256 _goal, uint256 _duration) external {
