@@ -14,7 +14,12 @@ abstract contract BaseTest is Test {
     uint256 internal constant GOAL = 10 ether;
     uint256 internal constant DURATION = 7 days;
 
+    error GoalTooLow(uint256 goal);
+    error MustBeCampaignOwner(uint256 campaignId, address caller);
+    error CampaignNotFound(uint256 campaignId);
     error InvalidPagination(uint256 page, uint256 perPage);
+
+    event CampaignRenamed(uint256 indexed campaignId, string newName);
 
     function setUp() public virtual {
         crowdfunding = new Crowdfunding();

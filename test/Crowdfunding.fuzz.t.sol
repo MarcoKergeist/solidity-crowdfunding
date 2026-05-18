@@ -5,15 +5,15 @@ import "./shared/BaseTest.t.sol";
 
 contract CrowdfundingFuzzTest is BaseTest {
     function testFuzz_Pledge(uint256 randomAmount) public {
-        uint256 amount = bound(randomAmount, 1 wei, 20 ether);
+        uint256 amount = bound(randomAmount, 0.01 ether, 20 ether);
 
         vm.prank(creator);
-        crowdfunding.createCampaign("Proyecto Fuzz", GOAL, DURATION);
+        crowdfunding.createCampaign("New Campaign", GOAL, DURATION);
 
         vm.prank(backer1);
         crowdfunding.pledge{value: amount}(0);
 
-        (,,, uint256 pledged,,) = crowdfunding.campaigns(0);
+        (,,,, uint256 pledged,,) = crowdfunding.campaigns(0);
 
         assertEq(pledged, amount);
         assertEq(crowdfunding.pledges(0, backer1), amount);
@@ -31,12 +31,12 @@ contract CrowdfundingFuzzTest is BaseTest {
 
     function testFuzz_CreateCampaign(uint256 randomGoal, uint256 randomDuration) public {
         uint256 duration = bound(randomDuration, 1 hours, 365 days);
-        uint256 goal = bound(randomGoal, 1 wei, 1000000 ether);
+        uint256 goal = bound(randomGoal, 0.01 ether, 1000000 ether);
 
         vm.prank(creator);
-        crowdfunding.createCampaign("Proyecto Flexible", goal, duration);
+        crowdfunding.createCampaign("New Campaign", goal, duration);
 
-        (,, uint256 savedGoal,, uint256 deadline,) = crowdfunding.campaigns(0);
+        (,,, uint256 savedGoal,, uint256 deadline,) = crowdfunding.campaigns(0);
 
         assertEq(savedGoal, goal);
         assertEq(deadline, block.timestamp + duration);
@@ -56,9 +56,8 @@ contract CrowdfundingFuzzTest is BaseTest {
         if (expectedFirstIndex >= totalCampaigns) {
             assertEq(results.length, 0);
         } else {
-            uint256 expectedHowMany = expectedFirstIndex + perPage > totalCampaigns
-                ? totalCampaigns - expectedFirstIndex
-                : perPage;
+            uint256 expectedHowMany =
+                expectedFirstIndex + perPage > totalCampaigns ? totalCampaigns - expectedFirstIndex : perPage;
 
             assertEq(results.length, expectedHowMany);
         }

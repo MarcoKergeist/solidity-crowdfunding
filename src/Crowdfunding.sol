@@ -9,6 +9,7 @@ contract Crowdfunding is Ownable {
     uint8 public constant MAX_FEE = 5;
 
     struct Campaign {
+        uint256 id;
         string name;
         address owner;
         uint256 goal;
@@ -22,6 +23,7 @@ contract Crowdfunding is Ownable {
     }
 
     // Data
+    uint256 public minimumCampaignGoal = 0.01 ether;
     uint8 public feePercentage = 2;
     uint256 public accumulatedFees;
     mapping(uint256 => Campaign) public campaigns;
@@ -29,6 +31,8 @@ contract Crowdfunding is Ownable {
 
     // Errors
     error FeeOutOfBounds(uint8 fee);
+    error GoalTooLow(uint256 goal);
+    error MustBeCampaignOwner(uint256 campaignId, address caller);
     error CampaignNotFound(uint256 campaignId);
     error CampaignEnded(uint256 campaignId);
     error CampaignNotEnded(uint256 campaignId);
@@ -44,9 +48,14 @@ contract Crowdfunding is Ownable {
     event CampaignCreated(
         uint256 indexed campaignId, address indexed owner, string name, uint256 goal, uint256 deadline
     );
+    event CampaignRenamed(uint256 indexed campaignId, string newName);
     event CampaignPledged(uint256 indexed campaignId, address indexed backer, uint256 amount);
     event FundsClaimed(uint256 indexed campaignId, address indexed owner, uint256 amount);
     event FundsRecovered(uint256 indexed campaignId, address indexed backer, uint256 amount);
+
+    function setMinimumCampaignGoal(uint256 _minimumCampaignGoal) external onlyOwner {
+        minimumCampaignGoal = _minimumCampaignGoal;
+    }
 
     function setFeePercentage(uint8 _feePercentage) external onlyOwner {
         if (_feePercentage > MAX_FEE) {
@@ -91,10 +100,15 @@ contract Crowdfunding is Ownable {
         return paginatedCampaigns;
     }
 
-    function createCampaign(string memory _name, uint256 _goal, uint256 _duration) external {
+    function createCampaign(string memory _name, uint256 _goal, uint256 _duration) external returns (uint256) {
+        if (_goal < minimumCampaignGoal) {
+            revert GoalTooLow(_goal);
+        }
+
         uint256 campaignId = _campaignCount++;
 
         campaigns[campaignId] = Campaign({
+            id: campaignId,
             name: _name,
             owner: msg.sender,
             goal: _goal,
@@ -104,6 +118,22 @@ contract Crowdfunding is Ownable {
         });
 
         emit CampaignCreated(campaignId, msg.sender, _name, _goal, block.timestamp + _duration);
+
+        return campaignId;
+    }
+
+    function renameCampaign(uint256 _campaignId, string memory _newName) external {
+        if (campaigns[_campaignId].owner == address(0)) {
+            revert CampaignNotFound(_campaignId);
+        }
+
+        if (campaigns[_campaignId].owner != msg.sender) {
+            revert MustBeCampaignOwner(_campaignId, msg.sender);
+        }
+
+        campaigns[_campaignId].name = _newName;
+
+        emit CampaignRenamed(_campaignId, _newName);
     }
 
     function pledge(uint256 _campaignId) external payable {
@@ -128,6 +158,10 @@ contract Crowdfunding is Ownable {
     function claim(uint256 _campaignId) external {
         if (campaigns[_campaignId].owner == address(0)) {
             revert CampaignNotFound(_campaignId);
+        }
+
+        if (campaigns[_campaignId].owner != msg.sender) {
+            revert MustBeCampaignOwner(_campaignId, msg.sender);
         }
 
         if (block.timestamp <= campaigns[_campaignId].deadline) {
